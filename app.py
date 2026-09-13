@@ -160,7 +160,7 @@ st.caption("국토교통부 실시간 Open API 연동 | 수도권 72개 시·군
 st.divider()
 
 # ----------------------------------------------------
-# [수도권 전역 정밀 법정동 코드 매핑 테이블 (전수 100% 정상 수집 검증 완료)]
+# [수도권 전역 정밀 법정동 코드 매핑 테이블]
 # ----------------------------------------------------
 REGION_CODES = {
     # ------------------ [경기 남부 핵심] ------------------
@@ -190,7 +190,6 @@ REGION_CODES = {
     "군포시": "41410",
     "의왕시": "41430",
     
-    # 부천시 3개 일반구 (2024년 구 체제 복원 완벽 반영)
     "부천시 원미구 (중동·상동 등)": "41192",
     "부천시 소사구 (옥길·범박 등)": "41194",
     "부천시 오정구": "41196",
@@ -212,7 +211,7 @@ REGION_CODES = {
     "파주시": "41480",
     "의정부시": "41150",
 
-    # ------------------ [인천광역시 전역 (정밀 개편 코드 전수 매핑)] ------------------
+    # ------------------ [인천광역시 전역] ------------------
     "인천 연수구 (송도 등)": "28185",
     "인천 서구 (청라·루원 등)": "28275",
     "인천 검단 (검단신도시 등)": "28290",
@@ -256,6 +255,9 @@ REGION_CODES = {
     "서울 관악구": "11620"
 }
 
+# 보안 API 키 (화면에 노출하지 않고 백엔드 내부에서만 안전하게 사용)
+BACKEND_API_KEY = "74d79db6886eb8582ae57b28c0c92cc447daf825fe00eef976188d946c1f47ef"
+
 # 세션 상태 관리
 if "data_loaded" not in st.session_state:
     st.session_state.data_loaded = False
@@ -273,14 +275,8 @@ if "persistent_selected_apts" not in st.session_state:
     st.session_state.persistent_selected_apts = []
 
 # ----------------------------------------------------
-# 사이드바 설정 Form
+# 사이드바 설정 Form (인증키 입력창을 완전히 제거하여 보안 완벽 보호)
 # ----------------------------------------------------
-st.sidebar.header("🔑 국토부 API 설정")
-default_key = "74d79db6886eb8582ae57b28c0c92cc447daf825fe00eef976188d946c1f47ef"
-user_api_key = st.sidebar.text_input("공공데이터포털 인증키", value=default_key, type="password")
-
-st.sidebar.divider()
-
 with st.sidebar.form(key="main_control_form"):
     st.header("⚙️ 분석 조건 설정")
     
@@ -429,7 +425,7 @@ if submit_btn:
     ym_list = sorted(list(set(ym_list)))
 
     total_tasks = len(selected_regions) * len(ym_list)
-    clean_key = unquote(user_api_key.strip())
+    clean_key = unquote(BACKEND_API_KEY.strip())
     
     # [중앙 실시간 다이내믹 로딩 카드]
     loading_placeholder = st.empty()
@@ -698,7 +694,7 @@ if current_tab == "🎯 관심 아파트 단지 1:1~1:5 정밀 맞비교 브리�
                     sub_table_html += f"<tr><td>{r['지역명']}</td><td>{r['법정동']}</td><td><b>{r['단지명']}</b></td><td><a class='map-btn' href='{r['네이버링크']}' target='_blank'>위치·매물 보기 🗺️</a></td><td>{r['계약일자_표시']}</td><td>{r['전용면적_m2']:.2f} ㎡</td><td>{r['층']}</td><td>{r['건축년도']} 년</td><td><span style='color:#1e40af; font-weight:700;'>{r['거래금액_억']:.2f} 억 원</span></td><td>{int(r['평당가_만원']):,} 만 원</td></tr>"
                 sub_table_html += "</tbody></table></div>"
                 if len(sub_table_df) > 200:
-                    sub_table_html += f"<p style='font-size:12px; color:#64748b; text-align:right;'>※ 고속 화면 표시를 위해 최신 거래 200건을 우선 표시합니다. (전체 {len(sub_table_df):,}건은 상단 [📥 상세내역 엑셀 다운로드]로 확인 가능)</p>"
+                    sub_table_html += f"<p style='font-size:12px; color:#64748b; text-align:right;'>※ 고속 화면 표시를 위해 최신 거래 200건을 우선 표시합니다. (전체 {len(sub_table_df):,}건 전수는 상단 [📥 상세내역 엑셀 다운로드]로 확인 가능)</p>"
                 st.markdown(sub_table_html, unsafe_allow_html=True)
             else:
                 st.warning("선택하신 단지에 해당하는 거래 데이터가 없습니다.")
