@@ -12,11 +12,42 @@ import time
 # 페이지 기본 설정
 st.set_page_config(page_title="수도권 아파트 실거래가 다자간 심층 비교 분석 시스템", layout="wide")
 
-# 고급 금융/프롭테크 스타일 커스텀 CSS
+# 고급 금융/프롭테크 스타일 커스텀 CSS (모든 타이틀 무조건 한 줄 강제 정렬)
 st.markdown("""
 <style>
     .stDeployButton {display: none !important;}
     [data-testid="stDecoration"] {display: none !important;}
+
+    /* 메인 타이틀 절대 한 줄 유지 */
+    .main-app-title {
+        font-size: clamp(19px, 2.2vw, 30px);
+        font-weight: 800;
+        color: #0f172a;
+        white-space: nowrap !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin-top: 5px;
+        margin-bottom: 4px;
+        display: block;
+    }
+
+    /* 한 줄 섹션 헤더 스타일 */
+    .one-line-header {
+        font-size: 19px;
+        font-weight: 700;
+        color: #1e293b;
+        white-space: nowrap !important;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        line-height: 42px;
+    }
+    .one-line-header .highlight-cnt {
+        color: #2563eb;
+        font-weight: 800;
+    }
 
     /* 메트릭 카드 프리미엄 스타일 */
     div[data-testid="stMetric"] {
@@ -64,17 +95,19 @@ st.markdown("""
         font-size: 15px;
         cursor: pointer;
         transition: all 0.2s;
+        white-space: nowrap !important;
     }
 
     div.stButton > button:first-child {
         background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
         color: white;
         font-weight: bold;
-        font-size: 15px;
-        height: 46px;
+        font-size: 14px;
+        height: 42px;
         border-radius: 8px;
         border: none;
         box-shadow: 0 2px 4px rgba(37,99,235,0.2);
+        white-space: nowrap !important;
     }
     .custom-table-container {
         max-height: 480px;
@@ -91,6 +124,7 @@ st.markdown("""
         border-collapse: collapse;
         font-size: 14px;
         text-align: center;
+        white-space: nowrap;
     }
     .custom-table th {
         background-color: #f8fafc;
@@ -155,8 +189,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# 메인 타이틀
-st.title("📊 수도권(서울·경기·인천) 아파트 실거래가 다자간 심층 비교 시스템")
+# 메인 타이틀 (절대 두 줄로 안 깨지고 한 줄로 일렬 표기)
+st.markdown("<div class='main-app-title'>📊 수도권(서울·경기·인천) 아파트 실거래가 다자간 심층 비교 시스템</div>", unsafe_allow_html=True)
 st.caption("국토교통부 실시간 Open API 연동 | 수도권 72개 시·군·구 100% 전수 검증 완료")
 st.divider()
 
@@ -191,7 +225,7 @@ REGION_CODES = {
     "군포시": "41410",
     "의왕시": "41430",
     
-    # 부천시 3개 일반구 (2024년 구 체제 복원 완벽 반영)
+    # 부천시 3개 일반구
     "부천시 원미구 (중동·상동 등)": "41192",
     "부천시 소사구 (옥길·범박 등)": "41194",
     "부천시 오정구": "41196",
@@ -257,7 +291,7 @@ REGION_CODES = {
     "서울 관악구": "11620"
 }
 
-# 보안 API 키 (화면에 노출하지 않고 백엔드 내부에서만 안전하게 사용)
+# 보안 API 키
 BACKEND_API_KEY = "74d79db6886eb8582ae57b28c0c92cc447daf825fe00eef976188d946c1f47ef"
 
 # 세션 상태 관리
@@ -364,15 +398,14 @@ def fetch_single_month_raw(clean_key, reg_name, lawd_code, ym):
                 pyung_area = area_m2 / 3.30578
                 pyung_price = round(deal_amt / pyung_area, 1) if pyung_area > 0 else 0
                 
-                # 원하셨던 정확한 네이버페이 부동산 단지 상세 직행 링크 (단지 매물·평형·호가 직접 연결)
+                # PC와 모바일/태블릿 모두 기기 자동 판별하여 100% 단지 직행하는 쿼리 생성
                 naver_query = quote(f"{dong_nm} {apt_nm}")
-                naver_url = f"https://new.land.naver.com/search?sk={naver_query}"
 
                 month_data.append({
                     '지역명': reg_name,
                     '법정동': dong_nm,
                     '단지명': apt_nm,
-                    '네이버링크': naver_url,
+                    'naver_query': naver_query,
                     '거래금액_만원': deal_amt,
                     '거래금액_억': round(deal_amt / 10000, 2),
                     '전용면적_m2': area_m2,
@@ -639,7 +672,7 @@ if current_tab == "🎯 관심 아파트 단지 1:1~1:5 정밀 맞비교 브리�
                         build_y = t_df.iloc[0]['건축년도']
                         reg_n = t_df.iloc[0]['지역명']
                         dong_n = t_df.iloc[0]['법정동']
-                        link_n = t_df.iloc[0]['네이버링크']
+                        q_str = t_df.iloc[0]['naver_query']
                         cnt_n = len(t_df)
                         
                         recovery_rate = (last_p / max_p * 100) if max_p > 0 else 100
@@ -648,7 +681,7 @@ if current_tab == "🎯 관심 아파트 단지 1:1~1:5 정밀 맞비교 브리�
                             '단지명': apt_name,
                             '소속지역': reg_n,
                             '법정동': dong_n,
-                            '네이버링크': link_n,
+                            'naver_query': q_str,
                             '최근거래가_억': last_p,
                             '최고가_억': max_p,
                             '최저가_억': min_p,
@@ -663,17 +696,17 @@ if current_tab == "🎯 관심 아파트 단지 1:1~1:5 정밀 맞비교 브리�
                 table_html = "<div class='custom-table-container'><table class='custom-table'>"
                 table_html += "<thead><tr><th>단지명</th><th>소속지역</th><th>법정동</th><th>네이버페이 부동산</th><th>최근 거래가</th><th>최고가</th><th>최저가</th><th>전고점 회복률</th><th>평균 평당가</th><th>건축년도</th><th>거래건수</th></tr></thead><tbody>"
                 for _, r in apt_summary.iterrows():
-                    table_html += f"<tr><td><b>{r['단지명']}</b></td><td>{r['소속지역']}</td><td>{r['법정동']}</td><td><a class='map-btn' href='{r['네이버링크']}' target='_blank'>위치·매물 보기 🗺️</a></td><td>{r['최근거래가_억']:.2f} 억</td><td>{r['최고가_억']:.2f} 억</td><td>{r['최저가_억']:.2f} 억</td><td><b style='color:#dc2626;'>{r['회복률']:.1f}%</b></td><td>{int(r['평균평당가_만원']):,} 만원</td><td>{r['건축년도']} 년</td><td>{r['총거래건수']} 건</td></tr>"
+                    table_html += f"<tr><td><b>{r['단지명']}</b></td><td>{r['소속지역']}</td><td>{r['법정동']}</td><td><a class='map-btn' href='https://new.land.naver.com/search?sk={r['naver_query']}' onclick=\"if(/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)){{this.href='https://m.land.naver.com/search/result/{r['naver_query']}';}}\" target='_blank'>위치·매물 보기 🗺️</a></td><td>{r['최근거래가_억']:.2f} 억</td><td>{r['최고가_억']:.2f} 억</td><td>{r['최저가_억']:.2f} 억</td><td><b style='color:#dc2626;'>{r['회복률']:.1f}%</b></td><td>{int(r['평균평당가_만원']):,} 만원</td><td>{r['건축년도']} 년</td><td>{r['총거래건수']} 건</td></tr>"
                 table_html += "</tbody></table></div>"
                 st.markdown(table_html, unsafe_allow_html=True)
                 
                 # 여백 및 구분선
                 st.markdown("<div class='section-divider'></div>", unsafe_allow_html=True)
                 
-                # 3. 선택된 단지들의 실시간 실거래가 상세 내역
-                c_head1, c_head2 = st.columns([3, 1])
+                # 3. 선택된 단지들의 실시간 실거래가 상세 내역 (★ 절대 두 줄로 안 깨지는 한 줄 헤더 레이아웃)
+                c_head1, c_head2 = st.columns([4, 1.2])
                 with c_head1:
-                    st.markdown(f"##### 📑 선택된 **{len(target_apts)}개 단지**의 실거래 상세 내역 (총 {len(apt_sub_df):,}건)")
+                    st.markdown(f"<div class='one-line-header'>📑 선택된 <b>{len(target_apts)}개 단지</b>의 실거래 상세 내역 <span class='highlight-cnt'>(총 {len(apt_sub_df):,}건)</span></div>", unsafe_allow_html=True)
                 with c_head2:
                     try:
                         csv_data = apt_sub_df[['지역명', '법정동', '단지명', '계약일자_표시', '전용면적_m2', '층', '건축년도', '거래금액_억', '평당가_만원']].to_csv(index=False, encoding='utf-8-sig')
@@ -687,17 +720,17 @@ if current_tab == "🎯 관심 아파트 단지 1:1~1:5 정밀 맞비교 브리�
                     except Exception:
                         pass
                 
-                sub_table_df = apt_sub_df[['지역명', '법정동', '단지명', '네이버링크', '계약일자_표시', '전용면적_m2', '층', '건축년도', '거래금액_억', '평당가_만원']].copy()
+                sub_table_df = apt_sub_df[['지역명', '법정동', '단지명', 'naver_query', '계약일자_표시', '전용면적_m2', '층', '건축년도', '거래금액_억', '평당가_만원']].copy()
                 sub_table_df = sub_table_df.sort_values(by='계약일자_표시', ascending=False)
                 
                 display_sub_df = sub_table_df.head(200)
                 sub_table_html = "<div class='custom-table-container'><table class='custom-table'>"
                 sub_table_html += "<thead><tr><th>지역명</th><th>법정동</th><th>단지명</th><th>네이버페이 부동산 🔗</th><th>계약일자</th><th>전용면적(㎡)</th><th>층</th><th>건축년도</th><th>거래금액(억)</th><th>평당가(만원)</th></tr></thead><tbody>"
                 for _, r in display_sub_df.iterrows():
-                    sub_table_html += f"<tr><td>{r['지역명']}</td><td>{r['법정동']}</td><td><b>{r['단지명']}</b></td><td><a class='map-btn' href='{r['네이버링크']}' target='_blank'>위치·매물 보기 🗺️</a></td><td>{r['계약일자_표시']}</td><td>{r['전용면적_m2']:.2f} ㎡</td><td>{r['층']}</td><td>{r['건축년도']} 년</td><td><span style='color:#1e40af; font-weight:700;'>{r['거래금액_억']:.2f} 억 원</span></td><td>{int(r['평당가_만원']):,} 만 원</td></tr>"
+                    sub_table_html += f"<tr><td>{r['지역명']}</td><td>{r['법정동']}</td><td><b>{r['단지명']}</b></td><td><a class='map-btn' href='https://new.land.naver.com/search?sk={r['naver_query']}' onclick=\"if(/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)){{this.href='https://m.land.naver.com/search/result/{r['naver_query']}';}}\" target='_blank'>위치·매물 보기 🗺️</a></td><td>{r['계약일자_표시']}</td><td>{r['전용면적_m2']:.2f} ㎡</td><td>{r['층']}</td><td>{r['건축년도']} 년</td><td><span style='color:#1e40af; font-weight:700;'>{r['거래금액_억']:.2f} 억 원</span></td><td>{int(r['평당가_만원']):,} 만 원</td></tr>"
                 sub_table_html += "</tbody></table></div>"
                 if len(sub_table_df) > 200:
-                    sub_table_html += f"<p style='font-size:12px; color:#64748b; text-align:right;'>※ 고속 화면 표시를 위해 최신 거래 200건을 우선 표시합니다. (전체 {len(sub_table_df):,}건 전수는 상단 [📥 상세내역 엑셀 다운로드]로 확인 가능)</p>"
+                    sub_table_html += f"<p style='font-size:12px; color:#64748b; text-align:right;'>※ 고속 화면 표시를 위해 최신 거래 200건을 우선 표시합니다. (전체 {len(sub_table_df):,}건은 상단 [📥 상세내역 엑셀 다운로드]로 확인 가능)</p>"
                 st.markdown(sub_table_html, unsafe_allow_html=True)
             else:
                 st.warning("선택하신 단지에 해당하는 거래 데이터가 없습니다.")
@@ -743,13 +776,13 @@ elif current_tab == "📈 지역별 거시 시세 추이선 및 평당가 비교
                 st.plotly_chart(fig_vol, use_container_width=True)
 
 # ====================================================
-# [탭 3] 전체 지역 실거래가 원본 내역
+# [탭 3] 전체 지역 실거래가 원본 내역 (★ 절대 두 줄로 안 깨지는 한 줄 헤더 레이아웃)
 # ====================================================
 elif current_tab == "📋 선택 지역 전체 실거래가 원본 내역":
     with st.spinner("🔄 대용량 전체 실거래가 데이터베이스를 정렬하고 있습니다..."):
-        c_tot1, c_tot2 = st.columns([3, 1])
+        c_tot1, c_tot2 = st.columns([4, 1.2])
         with c_tot1:
-            st.subheader(f"📋 {saved_period} 선택 지역 전체 실거래가 원본 내역 (총 {len(base_df):,}건)")
+            st.markdown(f"<div class='one-line-header'>📋 {saved_period} 선택 지역 전체 실거래가 원본 내역 <span class='highlight-cnt'>(총 {len(base_df):,}건)</span></div>", unsafe_allow_html=True)
         with c_tot2:
             try:
                 csv_all = base_df[['지역명', '법정동', '단지명', '계약일자_표시', '전용면적_m2', '층', '건축년도', '거래금액_억', '평당가_만원']].to_csv(index=False, encoding='utf-8-sig')
@@ -763,7 +796,7 @@ elif current_tab == "📋 선택 지역 전체 실거래가 원본 내역":
             except Exception:
                 pass
         
-        full_table_df = base_df[['지역명', '법정동', '단지명', '네이버링크', '계약일자_표시', '전용면적_m2', '층', '건축년도', '거래금액_억', '평당가_만원']].copy()
+        full_table_df = base_df[['지역명', '법정동', '단지명', 'naver_query', '계약일자_표시', '전용면적_m2', '층', '건축년도', '거래금액_억', '평당가_만원']].copy()
         full_table_df = full_table_df.sort_values(by='계약일자_표시', ascending=False)
         
         display_full_df = full_table_df.head(300)
@@ -771,7 +804,7 @@ elif current_tab == "📋 선택 지역 전체 실거래가 원본 내역":
         full_table_html = "<div class='custom-table-container'><table class='custom-table'>"
         full_table_html += "<thead><tr><th>지역명</th><th>법정동</th><th>단지명</th><th>네이버페이 부동산 🔗</th><th>계약일자</th><th>전용면적(㎡)</th><th>층</th><th>건축년도</th><th>거래금액(억)</th><th>평당가(만원)</th></tr></thead><tbody>"
         for _, r in display_full_df.iterrows():
-            full_table_html += f"<tr><td>{r['지역명']}</td><td>{r['법정동']}</td><td><b>{r['단지명']}</b></td><td><a class='map-btn' href='{r['네이버링크']}' target='_blank'>위치·매물 보기 🗺️</a></td><td>{r['계약일자_표시']}</td><td>{r['전용면적_m2']:.2f} ㎡</td><td>{r['층']}</td><td>{r['건축년도']} 년</td><td><span style='color:#1e40af; font-weight:700;'>{r['거래금액_억']:.2f} 억 원</span></td><td>{int(r['평당가_만원']):,} 만 원</td></tr>"
+            full_table_html += f"<tr><td>{r['지역명']}</td><td>{r['법정동']}</td><td><b>{r['단지명']}</b></td><td><a class='map-btn' href='https://new.land.naver.com/search?sk={r['naver_query']}' onclick=\"if(/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)){{this.href='https://m.land.naver.com/search/result/{r['naver_query']}';}}\" target='_blank'>위치·매물 보기 🗺️</a></td><td>{r['계약일자_표시']}</td><td>{r['전용면적_m2']:.2f} ㎡</td><td>{r['층']}</td><td>{r['건축년도']} 년</td><td><span style='color:#1e40af; font-weight:700;'>{r['거래금액_억']:.2f} 억 원</span></td><td>{int(r['평당가_만원']):,} 만 원</td></tr>"
         full_table_html += "</tbody></table></div>"
         if len(full_table_df) > 300:
             full_table_html += f"<p style='font-size:12px; color:#64748b; text-align:right;'>※ 고속 화면 표시를 위해 최신 거래 300건을 우선 표시합니다. (전체 {len(full_table_df):,}건 전수는 상단 [📥 전체 실거래가 엑셀 다운로드]로 확인 가능)</p>"
