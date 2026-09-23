@@ -190,6 +190,7 @@ REGION_CODES = {
     "군포시": "41410",
     "의왕시": "41430",
     
+    # 부천시 3개 일반구 (2024년 구 체제 복원 완벽 반영)
     "부천시 원미구 (중동·상동 등)": "41192",
     "부천시 소사구 (옥길·범박 등)": "41194",
     "부천시 오정구": "41196",
@@ -362,14 +363,15 @@ def fetch_single_month_raw(clean_key, reg_name, lawd_code, ym):
                 pyung_area = area_m2 / 3.30578
                 pyung_price = round(deal_amt / pyung_area, 1) if pyung_area > 0 else 0
                 
-                naver_query = quote(f"{dong_nm} {apt_nm}")
-                naver_url = f"https://new.land.naver.com/search?sk={naver_query}"
+                # 정확한 네이버 지도(Naver Map) 위치 핀 직접 연결 URL
+                map_query = quote(f"{reg_name} {dong_nm} {apt_nm}")
+                naver_map_url = f"https://map.naver.com/p/search/{map_query}"
 
                 month_data.append({
                     '지역명': reg_name,
                     '법정동': dong_nm,
                     '단지명': apt_nm,
-                    '네이버링크': naver_url,
+                    '네이버링크': naver_map_url,
                     '거래금액_만원': deal_amt,
                     '거래금액_억': round(deal_amt / 10000, 2),
                     '전용면적_m2': area_m2,
@@ -658,9 +660,9 @@ if current_tab == "🎯 관심 아파트 단지 1:1~1:5 정밀 맞비교 브리�
                 apt_summary = pd.DataFrame(apt_summary_list).sort_values(by='평균평당가_만원', ascending=False)
                 
                 table_html = "<div class='custom-table-container'><table class='custom-table'>"
-                table_html += "<thead><tr><th>단지명</th><th>소속지역</th><th>법정동</th><th>네이버 지도</th><th>최근 거래가</th><th>최고가</th><th>최저가</th><th>전고점 회복률</th><th>평균 평당가</th><th>건축년도</th><th>거래건수</th></tr></thead><tbody>"
+                table_html += "<thead><tr><th>단지명</th><th>소속지역</th><th>법정동</th><th>위치 확인</th><th>최근 거래가</th><th>최고가</th><th>최저가</th><th>전고점 회복률</th><th>평균 평당가</th><th>건축년도</th><th>거래건수</th></tr></thead><tbody>"
                 for _, r in apt_summary.iterrows():
-                    table_html += f"<tr><td><b>{r['단지명']}</b></td><td>{r['소속지역']}</td><td>{r['법정동']}</td><td><a class='map-btn' href='{r['네이버링크']}' target='_blank'>위치·매물 🗺️</a></td><td>{r['최근거래가_억']:.2f} 억</td><td>{r['최고가_억']:.2f} 억</td><td>{r['최저가_억']:.2f} 억</td><td><b style='color:#dc2626;'>{r['회복률']:.1f}%</b></td><td>{int(r['평균평당가_만원']):,} 만원</td><td>{r['건축년도']} 년</td><td>{r['총거래건수']} 건</td></tr>"
+                    table_html += f"<tr><td><b>{r['단지명']}</b></td><td>{r['소속지역']}</td><td>{r['법정동']}</td><td><a class='map-btn' href='{r['네이버링크']}' target='_blank'>위치 지도 📍</a></td><td>{r['최근거래가_억']:.2f} 억</td><td>{r['최고가_억']:.2f} 억</td><td>{r['최저가_억']:.2f} 억</td><td><b style='color:#dc2626;'>{r['회복률']:.1f}%</b></td><td>{int(r['평균평당가_만원']):,} 만원</td><td>{r['건축년도']} 년</td><td>{r['총거래건수']} 건</td></tr>"
                 table_html += "</tbody></table></div>"
                 st.markdown(table_html, unsafe_allow_html=True)
                 
@@ -689,9 +691,9 @@ if current_tab == "🎯 관심 아파트 단지 1:1~1:5 정밀 맞비교 브리�
                 
                 display_sub_df = sub_table_df.head(200)
                 sub_table_html = "<div class='custom-table-container'><table class='custom-table'>"
-                sub_table_html += "<thead><tr><th>지역명</th><th>법정동</th><th>단지명</th><th>네이버 지도 🔗</th><th>계약일자</th><th>전용면적(㎡)</th><th>층</th><th>건축년도</th><th>거래금액(억)</th><th>평당가(만원)</th></tr></thead><tbody>"
+                sub_table_html += "<thead><tr><th>지역명</th><th>법정동</th><th>단지명</th><th>위치 확인</th><th>계약일자</th><th>전용면적(㎡)</th><th>층</th><th>건축년도</th><th>거래금액(억)</th><th>평당가(만원)</th></tr></thead><tbody>"
                 for _, r in display_sub_df.iterrows():
-                    sub_table_html += f"<tr><td>{r['지역명']}</td><td>{r['법정동']}</td><td><b>{r['단지명']}</b></td><td><a class='map-btn' href='{r['네이버링크']}' target='_blank'>위치·매물 보기 🗺️</a></td><td>{r['계약일자_표시']}</td><td>{r['전용면적_m2']:.2f} ㎡</td><td>{r['층']}</td><td>{r['건축년도']} 년</td><td><span style='color:#1e40af; font-weight:700;'>{r['거래금액_억']:.2f} 억 원</span></td><td>{int(r['평당가_만원']):,} 만 원</td></tr>"
+                    sub_table_html += f"<tr><td>{r['지역명']}</td><td>{r['법정동']}</td><td><b>{r['단지명']}</b></td><td><a class='map-btn' href='{r['네이버링크']}' target='_blank'>위치 지도 📍</a></td><td>{r['계약일자_표시']}</td><td>{r['전용면적_m2']:.2f} ㎡</td><td>{r['층']}</td><td>{r['건축년도']} 년</td><td><span style='color:#1e40af; font-weight:700;'>{r['거래금액_억']:.2f} 억 원</span></td><td>{int(r['평당가_만원']):,} 만 원</td></tr>"
                 sub_table_html += "</tbody></table></div>"
                 if len(sub_table_df) > 200:
                     sub_table_html += f"<p style='font-size:12px; color:#64748b; text-align:right;'>※ 고속 화면 표시를 위해 최신 거래 200건을 우선 표시합니다. (전체 {len(sub_table_df):,}건 전수는 상단 [📥 상세내역 엑셀 다운로드]로 확인 가능)</p>"
@@ -766,9 +768,9 @@ elif current_tab == "📋 선택 지역 전체 실거래가 원본 내역":
         display_full_df = full_table_df.head(300)
         
         full_table_html = "<div class='custom-table-container'><table class='custom-table'>"
-        full_table_html += "<thead><tr><th>지역명</th><th>법정동</th><th>단지명</th><th>네이버 지도 🔗</th><th>계약일자</th><th>전용면적(㎡)</th><th>층</th><th>건축년도</th><th>거래금액(억)</th><th>평당가(만원)</th></tr></thead><tbody>"
+        full_table_html += "<thead><tr><th>지역명</th><th>법정동</th><th>단지명</th><th>위치 확인</th><th>계약일자</th><th>전용면적(㎡)</th><th>층</th><th>건축년도</th><th>거래금액(억)</th><th>평당가(만원)</th></tr></thead><tbody>"
         for _, r in display_full_df.iterrows():
-            full_table_html += f"<tr><td>{r['지역명']}</td><td>{r['법정동']}</td><td><b>{r['단지명']}</b></td><td><a class='map-btn' href='{r['네이버링크']}' target='_blank'>위치·매물 보기 🗺️</a></td><td>{r['계약일자_표시']}</td><td>{r['전용면적_m2']:.2f} ㎡</td><td>{r['층']}</td><td>{r['건축년도']} 년</td><td><span style='color:#1e40af; font-weight:700;'>{r['거래금액_억']:.2f} 억 원</span></td><td>{int(r['평당가_만원']):,} 만 원</td></tr>"
+            full_table_html += f"<tr><td>{r['지역명']}</td><td>{r['법정동']}</td><td><b>{r['단지명']}</b></td><td><a class='map-btn' href='{r['네이버링크']}' target='_blank'>위치 지도 📍</a></td><td>{r['계약일자_표시']}</td><td>{r['전용면적_m2']:.2f} ㎡</td><td>{r['층']}</td><td>{r['건축년도']} 년</td><td><span style='color:#1e40af; font-weight:700;'>{r['거래금액_억']:.2f} 억 원</span></td><td>{int(r['평당가_만원']):,} 만 원</td></tr>"
         full_table_html += "</tbody></table></div>"
         if len(full_table_df) > 300:
             full_table_html += f"<p style='font-size:12px; color:#64748b; text-align:right;'>※ 고속 화면 표시를 위해 최신 거래 300건을 우선 표시합니다. (전체 {len(full_table_df):,}건 전수는 상단 [📥 전체 실거래가 엑셀 다운로드]로 확인 가능)</p>"
